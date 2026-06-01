@@ -83,6 +83,24 @@ Resources:
               - s3:ListBucket
             Resource: !GetAtt AcademyUploadBucket.Arn
 
+  AcademyAmplifyComputeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: VoltronAcademyAmplifyComputeRole
+      Description: Allows Amplify SSR compute for VOS Academy to access DynamoDB and S3 backend resources.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AmplifyAssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - amplify.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref AcademyBackendManagedPolicy
+
 Outputs:
   AcademyTableName:
     Description: DynamoDB table name for ACADEMY_TABLE_NAME.
@@ -93,3 +111,6 @@ Outputs:
   AcademyBackendManagedPolicyArn:
     Description: Attach this managed policy to the Amplify SSR compute role.
     Value: !Ref AcademyBackendManagedPolicy
+  AcademyAmplifyComputeRoleArn:
+    Description: Select this as the Amplify SSR Compute role for the VOS Academy app.
+    Value: !GetAtt AcademyAmplifyComputeRole.Arn

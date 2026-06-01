@@ -86,13 +86,20 @@ The Next.js API uploads files server-side and serves them back through:
 
 ## Amplify SSR Compute IAM Role
 
-The CloudFormation stack outputs a managed policy:
+The CloudFormation stack outputs both:
 
 ```text
 VoltronAcademyBackendAccess
+VoltronAcademyAmplifyComputeRole
 ```
 
-Attach that managed policy to the Amplify SSR compute role for the VOS Academy app.
+When creating the VOS Academy Amplify app, select this compute role:
+
+```text
+AcademyAmplifyComputeRoleArn
+```
+
+The role already has the managed policy attached.
 
 It allows:
 
@@ -110,7 +117,7 @@ s3:GetObject
 s3:PutObject
 ```
 
-Limit the resources to the Academy table and upload bucket.
+The permissions are limited to the Academy table and upload bucket.
 
 ## Current AWS CLI Check
 
@@ -154,6 +161,12 @@ main
 ```
 
 Amplify will use `amplify.yml` from this repository.
+
+Select SSR compute role:
+
+```text
+VoltronAcademyAmplifyComputeRole
+```
 
 ## Domains
 
