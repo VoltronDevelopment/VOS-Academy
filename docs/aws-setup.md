@@ -31,13 +31,27 @@ CAMS_AUTH_TOKEN=<token shared with CAMS>
 
 ## DynamoDB
 
-Create one table:
+Create one table through CloudFormation:
+
+```powershell
+.\scripts\deploy-aws-backend.ps1 -Region ap-south-1 -UploadBucketName voltron-academy-uploads-<unique-suffix>
+```
+
+The bucket name must be globally unique. Use something like:
+
+```text
+voltron-academy-uploads-prod-<aws-account-id>
+```
+
+The stack creates one table:
 
 ```text
 Table name: VoltronAcademy
 Partition key: pk (String)
 Sort key: sk (String)
 Billing mode: On-demand
+Point-in-time recovery: on
+Encryption: on
 ```
 
 The app stores each Academy collection under a partition such as:
@@ -51,10 +65,10 @@ COLLECTION#attendancePunches
 
 ## S3
 
-Create one private bucket:
+The same CloudFormation stack creates one private bucket:
 
 ```text
-voltron-academy-uploads
+voltron-academy-uploads-<unique-suffix>
 ```
 
 Recommended:
@@ -72,7 +86,15 @@ The Next.js API uploads files server-side and serves them back through:
 
 ## Amplify SSR Compute IAM Role
 
-Attach permissions to the Amplify SSR compute role for:
+The CloudFormation stack outputs a managed policy:
+
+```text
+VoltronAcademyBackendAccess
+```
+
+Attach that managed policy to the Amplify SSR compute role for the VOS Academy app.
+
+It allows:
 
 - DynamoDB table read/write
 - S3 object read/write for the Academy upload bucket
@@ -89,6 +111,49 @@ s3:PutObject
 ```
 
 Limit the resources to the Academy table and upload bucket.
+
+## Current AWS CLI Check
+
+Before running deployment locally:
+
+```powershell
+aws sts get-caller-identity
+```
+
+If this fails with an invalid token, refresh credentials:
+
+```powershell
+aws configure
+```
+
+or, for AWS SSO:
+
+```powershell
+aws configure sso
+aws sso login --profile <profile-name>
+```
+
+Then rerun:
+
+```powershell
+.\scripts\deploy-aws-backend.ps1 -Region ap-south-1 -UploadBucketName <globally-unique-bucket-name>
+```
+
+## Amplify Connection
+
+Create a separate Amplify app for:
+
+```text
+VoltronDevelopment/VOS-Academy
+```
+
+Use branch:
+
+```text
+main
+```
+
+Amplify will use `amplify.yml` from this repository.
 
 ## Domains
 

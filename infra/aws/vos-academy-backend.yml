@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VOS Academy production backend resources.
+
+Parameters:
+  AcademyTableName:
+    Type: String
+    Default: VoltronAcademy
+    Description: DynamoDB table name used by ACADEMY_TABLE_NAME.
+  UploadBucketName:
+    Type: String
+    Default: ""
+    Description: Optional globally unique S3 bucket name. Leave blank to let CloudFormation generate one.
+
+Conditions:
+  HasUploadBucketName: !Not [!Equals [!Ref UploadBucketName, ""]]
+
+Resources:
+  AcademyTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref AcademyTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  AcademyUploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !If [HasUploadBucketName, !Ref UploadBucketName, !Ref AWS::NoValue]
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  AcademyBackendManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: VoltronAcademyBackendAccess
+      Description: Allows VOS Academy SSR routes to use DynamoDB records and S3 training uploads.
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AcademyDynamoDbAccess
+            Effect: Allow
+            Action:
+              - dynamodb:BatchWriteItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:Query
+              - dynamodb:UpdateItem
+              - dynamodb:DescribeTable
+            Resource: !GetAtt AcademyTable.Arn
+          - Sid: AcademyS3ObjectAccess
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+            Resource: !Sub "${AcademyUploadBucket.Arn}/*"
+          - Sid: AcademyS3BucketReadAccess
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource: !GetAtt AcademyUploadBucket.Arn
+
+Outputs:
+  AcademyTableName:
+    Description: DynamoDB table name for ACADEMY_TABLE_NAME.
+    Value: !Ref AcademyTable
+  AcademyUploadBucketName:
+    Description: S3 bucket name for ACADEMY_UPLOAD_BUCKET.
+    Value: !Ref AcademyUploadBucket
+  AcademyBackendManagedPolicyArn:
+    Description: Attach this managed policy to the Amplify SSR compute role.
+    Value: !Ref AcademyBackendManagedPolicy

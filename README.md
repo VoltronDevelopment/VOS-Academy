@@ -38,7 +38,13 @@ ACADEMY_UPLOAD_PREFIX=training/
 VOLTRON_AWS_REGION=ap-south-1
 ```
 
-See `docs/aws-setup.md` for the DynamoDB table, S3 bucket, IAM, and Amplify setup checklist.
+Deploy the backend resources with:
+
+```powershell
+.\scripts\deploy-aws-backend.ps1 -Region ap-south-1 -UploadBucketName <globally-unique-bucket-name>
+```
+
+See `docs/aws-setup.md` for the DynamoDB table, S3 bucket, IAM policy, Amplify setup, and domain checklist.
 
 ## Environment Variables
 
