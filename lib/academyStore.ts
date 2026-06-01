@@ -849,31 +849,32 @@ async function readDynamoCollection(collection: CollectionName) {
 
 async function replaceDynamoCollection(collection: CollectionName, records: JsonRecord[]) {
   const existing = await readDynamoRawCollection(collection);
-  await batchWriteDynamo([
-    ...existing.map((item) => ({
-      DeleteRequest: {
-        Key: {
-          pk: item.pk,
-          sk: item.sk
+  const deleteRequests = existing.map((item) => ({
+    DeleteRequest: {
+      Key: {
+        pk: item.pk,
+        sk: item.sk
+      }
+    }
+  }));
+  const putRequests = records.map((record) => {
+    const id = recordId(record, collection);
+    return {
+      PutRequest: {
+        Item: {
+          pk: collectionPk(collection),
+          sk: id,
+          collection,
+          id,
+          payload: record,
+          updatedAt: new Date().toISOString()
         }
       }
-    })),
-    ...records.map((record) => {
-      const id = recordId(record, collection);
-      return {
-        PutRequest: {
-          Item: {
-            pk: collectionPk(collection),
-            sk: id,
-            collection,
-            id,
-            payload: record,
-            updatedAt: new Date().toISOString()
-          }
-        }
-      };
-    })
-  ]);
+    };
+  });
+
+  await batchWriteDynamo(deleteRequests);
+  await batchWriteDynamo(putRequests);
 }
 
 async function readDynamoRawCollection(collection: CollectionName) {
